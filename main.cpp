@@ -6,29 +6,37 @@
 #include <algorithm>
 #include <bitset>
 #include <string>
-#include <type_traits>
-#include <limits>
+#include <sstream>
 
 
 using namespace std;
 
 string readKey();
-string readFilename();
-void readFile(string fileName);
-void encrypt(char* plainText);
+string readFileName();
+int* keyExpansion(string key);
+void readFile(string fileName, int* expandedKey);
+void encrypt(char* plainText, int* expandedKey);
+
+template <size_t N1, size_t N2 >
+bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
+    string s1 = b1.to_string();
+    string s2 = b2.to_string();
+    return bitset <N1 + N2>( s1 + s2 );
+}
 
 int main(){
-    unsigned char pArray[]={0x49fe,0xd3c6,0x7326,0x1234,0xdefb,0x5a8b,0x1e61,0x77ad,0x94b2,0x5731};
+    //unsigned char pArray[]={0x49fe,0xd3c6,0x7326,0x1234,0xdefb,0x5a8b,0x1e61,0x77ad,0x94b2,0x5731};
     string key = readKey();
     string fileName = readFileName();
-    readFile(fileName);
+    int* expandedKey = keyExpansion(key);
+    readFile(fileName, expandedKey);
+    
 
     return 0;
 }
 
 
-void readFile(string fileName){
-
+void readFile(string fileName, int* expandedKey){
     FILE *file;
     char buffer[4];
     file = fopen(fileName.c_str(), "r");
@@ -36,16 +44,15 @@ void readFile(string fileName){
         cout << "error opening file"<< endl;
     }else{
         int counter = 0;
-        while(feof(file)){
-            
+        while(!feof(file)){
             if(counter == 4){
                 char* toEncrypt = (char*)malloc(4 * sizeof(char));
-                copy(buffer, buffer + 4, toEncrypt.begin());
+                copy(buffer, buffer + 4, toEncrypt);
                 counter = 0;
-                encrypt(toEncrypt);
+                encrypt(toEncrypt, expandedKey);
 
             } else{
-                char temp = fgetc(file);
+                buffer[counter] = fgetc(file);
                 counter++;
             }
             
@@ -73,7 +80,7 @@ int* keyExpansion(string key) {
     int* newKey = (int*) malloc(10 * sizeof(int));
 
     for (int i = 0; i < key.length() - 1 ; i++) {
-        cout << (int)key[i] << endl;
+        cout << "Key: " << (int)key[i] << endl;
 
         switch(i){
             case 0: newKey[0] += key[i]; break;
@@ -101,27 +108,47 @@ int* keyExpansion(string key) {
 
     for (int i = 0; i < 9; i++) {
         newKey[i] = newKey[i] ^ pArray[i];
-        cout << newKey[i] << endl;
+        cout << "newKey: " << newKey[i] << endl;
     }
 
     return newKey;
 }
 
-void encrypt(char* plainText){
+void encrypt(char* plainText, int* expandedKey){
     //Declared pArray here not sure if it would be better to be passed in or not
-     unsigned char pArray[]={0x49fe,0xd3c6,0x7326,0x1234,0xdefb,0x5a8b,0x1e61,0x77ad,0x94b2,0x5731};
+    cout << plainText << endl;
     //Split plainText into 16 bits for left and right sides
     char cRight [2];
     cRight[1]=plainText[3];
     cRight[2]=plainText[4];
     string sLeft(plainText);
+    sLeft = sLeft.substr(0, 2);
     string sRight(cRight);
-    bitset<16> left(sLeft);
-    bitset<16> right(sRight);
+
+    string iString = sLeft, hString;
+    int iTemp = 0;
+    stringstream is, hs;
+    is << iString; 
+    is >> iTemp; // convert string to int
+    hs << hex << iTemp; // push int through hex manipulator
+    hString = hs.str(); // store hex string
+    bitset<16> left(hString);
+
+    string stringRight, lString;
+    int lTemp = 0;
+    stringstream ls, lhs;
+    ls << lString; 
+    ls >> lTemp; // convert string to int
+    lhs << hex << lTemp; // push int through hex manipulator
+    lString = lhs.str(); // store hex string
+
+    bitset<16> right(lString);
+
+    cout << "MADE IT!" <<endl;
     //for loop to run through encryption steps 0,9
     for(int counter=0; counter<=9; counter++){
         //placeHolder=left exclusive or with p[counter]
-        bitset<16> pBits(pArray[counter]);
+        bitset<16> pBits(expandedKey[counter]); //Will this work with INTS
         bitset<16> placeHolder = (left ^= pBits); 
         bitset<16> value;
         //value=fBox(placeHolder, Reference S box array); //fBox-returns 16 bits
@@ -129,14 +156,14 @@ void encrypt(char* plainText){
         right = placeHolder; 
         counter++;
     }
+    
     //Encryption done, combine left and right into 32 bits
-    bitset<32> combine;
-    combine = cat(left,right);
+    bitset<32> combine = concat(left,right);
     //open and print to file 
     ofstream output;
     //app is used to append to a file
     output.open("Encrypted.txt", ios_base::app);
-   //What is supposed to be output? bits? 
+    //What is supposed to be output? bits? 
     output << combine;
     //Encryption done 
 
