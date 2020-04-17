@@ -133,7 +133,7 @@ void encrypt(char* plainText, int* expandedKey){
     hs << hex << iTemp; // push int through hex manipulator
     hString = hs.str(); // store hex string
     bitset<16> left(hString);
-
+    //FIX NAMING
     string stringRight, lString;
     int lTemp = 0;
     stringstream ls, lhs;
