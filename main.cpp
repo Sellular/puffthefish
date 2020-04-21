@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 
+typedef unsigned char u_char;
 
 using namespace std;
 
@@ -16,6 +17,7 @@ string readFileName();
 int* keyExpansion(string key);
 void readFile(string fileName, int* expandedKey);
 void encrypt(char* plainText, int* expandedKey);
+u_char* charsToHex(string byteString);
 
 template <size_t N1, size_t N2 >
 bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
@@ -26,6 +28,7 @@ bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
 
 int main(){
     //unsigned char pArray[]={0x49fe,0xd3c6,0x7326,0x1234,0xdefb,0x5a8b,0x1e61,0x77ad,0x94b2,0x5731};
+    remove ("Encrypted.txt");
     string key = readKey();
     string fileName = readFileName();
     int* expandedKey = keyExpansion(key);
@@ -44,7 +47,7 @@ void readFile(string fileName, int* expandedKey){
         cout << "error opening file"<< endl;
     }else{
         int counter = 0;
-        while(!feof(file)){
+        while(!feof(file)){ 
             if(counter == 4){
                 char* toEncrypt = (char*)malloc(4 * sizeof(char));
                 copy(buffer, buffer + 4, toEncrypt);
@@ -114,37 +117,48 @@ int* keyExpansion(string key) {
     return newKey;
 }
 
+string charToBinary(u_char c){
+    char result[sizeof(u_char) * 8];
+    unsigned index = sizeof(u_char) * 8;
+    for(int i = 0; i < 8; i++){
+        result[i] = '0';
+    }
+    result[index] = '\0';
+    do result[--index] = '0' + (c & 1);
+    while (c >>= 1);
+
+    return string(result);
+}
+
 void encrypt(char* plainText, int* expandedKey){
     //Declared pArray here not sure if it would be better to be passed in or not
     cout << plainText << endl;
     //Split plainText into 16 bits for left and right sides
     char cRight [2];
-    cRight[1]=plainText[3];
-    cRight[2]=plainText[4];
+    cRight[0]=plainText[2];
+    cRight[1]=plainText[3]; 
+
     string sLeft(plainText);
     sLeft = sLeft.substr(0, 2);
     string sRight(cRight);
 
-    string iString = sLeft, hString;
-    int iTemp = 0;
-    stringstream is, hs;
-    is << iString; 
-    is >> iTemp; // convert string to int
-    hs << hex << iTemp; // push int through hex manipulator
-    hString = hs.str(); // store hex string
-    bitset<16> left(hString);
-    //FIX NAMING
-    string stringRight, lString;
-    int lTemp = 0;
-    stringstream ls, lhs;
-    ls << lString; 
-    ls >> lTemp; // convert string to int
-    lhs << hex << lTemp; // push int through hex manipulator
-    lString = lhs.str(); // store hex string
+    
+    u_char* rightByteString = charsToHex(sRight);
+    u_char* leftByteString = charsToHex(sLeft);
+   
+    bitset<8> left1(charToBinary(leftByteString[0]));
+    bitset<8> left2 (charToBinary(leftByteString[1]));
+    bitset<16> left = concat(left1,left2);
+ 
 
-    bitset<16> right(lString);
+    bitset<8> right1(rightByteString[0]);
+    bitset<8> right2 (rightByteString[1]);
+    bitset<16> right = concat(right1,right2);
+    cout << "Left string: " << sLeft << endl;
+    cout << "Right string: " << sRight << endl;
+    cout << "Left bit string: " << left.to_string() <<endl;
+    cout << "Right bit string: " << right.to_string() <<endl;
 
-    cout << "MADE IT!" <<endl;
     //for loop to run through encryption steps 0,9
     for(int counter=0; counter<=9; counter++){
         //placeHolder=left exclusive or with p[counter]
@@ -164,9 +178,19 @@ void encrypt(char* plainText, int* expandedKey){
     //app is used to append to a file
     output.open("Encrypted.txt", ios_base::app);
     //What is supposed to be output? bits? 
-    output << combine;
+    output << hex <<combine.to_ulong() <<" "; //to_ulong() -for hex
     //Encryption done 
 
+
+}
+
+u_char* charsToHex(string data){
+    
+    u_char* byteArray = (u_char*)malloc(data.length() * sizeof(u_char));
+    for(int i = 0; i < data.length(); i++){
+        byteArray[i] = (u_char)data[i];
+    }
+    return byteArray;
 }
 
 string readFileName(){
