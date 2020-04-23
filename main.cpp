@@ -41,7 +41,7 @@ int main(){
 
 void readFile(string fileName, int* expandedKey){
     FILE *file;
-    char buffer[4];
+    char buffer[4]; 
     file = fopen(fileName.c_str(), "r");
     if(file == NULL){
         cout << "error opening file"<< endl;
@@ -70,12 +70,12 @@ int* keyExpansion(string key) {
 
     if (key.length() < 20) {//check to see if key needs padding
 
-        int legnths = key.length();//counter to keep track of length
+        int lengths = key.length();//counter to keep track of length
         int counter = 0;
 
-        while (legnths < 20) {//if key is too short, repeat the key
+        while (lengths < 20) {//if key is too short, repeat the key
             key.push_back(key[counter]);
-            legnths++;
+            lengths++;
             counter++;
         }
     }
@@ -83,7 +83,7 @@ int* keyExpansion(string key) {
     int* newKey = (int*) malloc(10 * sizeof(int));
 
     for (int i = 0; i < key.length() - 1 ; i++) {
-        cout << "Key: " << (int)key[i] << endl;
+        //cout << "Key: " << (int)key[i] << endl;
 
         switch(i){
             case 0: newKey[0] += key[i]; break;
@@ -111,7 +111,7 @@ int* keyExpansion(string key) {
 
     for (int i = 0; i < 9; i++) {
         newKey[i] = newKey[i] ^ pArray[i];
-        cout << "newKey: " << newKey[i] << endl;
+        //cout << "newKey: " << newKey[i] << endl;
     }
 
     return newKey;
@@ -154,10 +154,10 @@ void encrypt(char* plainText, int* expandedKey){
     bitset<8> right1(rightByteString[0]);
     bitset<8> right2 (rightByteString[1]);
     bitset<16> right = concat(right1,right2);
-    cout << "Left string: " << sLeft << endl;
-    cout << "Right string: " << sRight << endl;
-    cout << "Left bit string: " << left.to_string() <<endl;
-    cout << "Right bit string: " << right.to_string() <<endl;
+    //cout << "Left string: " << sLeft << endl;
+    //cout << "Right string: " << sRight << endl;
+    //cout << "Left bit string: " << left.to_string() <<endl;
+    //cout << "Right bit string: " << right.to_string() <<endl;
 
     //for loop to run through encryption steps 0,9
     for(int counter=0; counter<=9; counter++){
