@@ -14,10 +14,12 @@ using namespace std;
 
 string readKey();
 string readFileName();
+string readOutputChoice();
 int* keyExpansion(string key);
 void readFile(string fileName, int* expandedKey);
-void encrypt(char* plainText, int* expandedKey);
+void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choice);
 u_char* charsToHex(string byteString);
+bitset <16> fBox(bitset<16> input, int (*sValues)[8][4]);
 
 template <size_t N1, size_t N2 >
 bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
@@ -40,6 +42,15 @@ int main(){
 
 
 void readFile(string fileName, int* expandedKey){
+    int sBox[8][4] = {{0xabcb,0x7386,0x6ea3,0x4128},
+    {0x689b,0x22c7,0x532d,0xa42b},
+    {0x0e52,0xf025,0x8724,0x9ac0},
+    {0x776a,0x629f,0x4510,0x3188},
+    {0x1111,0xda99,0x52bc,0xdead},
+    {0xdeaf,0xbeef,0x5810,0x7219},
+    {0x733b,0x5ac7,0x2468,0x9753},
+    {0x8263,0x820d,0xe72f,0x410c}};
+    string choice=readOutputChoice();
     FILE *file;
     char buffer[4]; 
     file = fopen(fileName.c_str(), "r");
@@ -52,7 +63,7 @@ void readFile(string fileName, int* expandedKey){
                 char* toEncrypt = (char*)malloc(4 * sizeof(char));
                 copy(buffer, buffer + 4, toEncrypt);
                 counter = 0;
-                encrypt(toEncrypt, expandedKey);
+                encrypt(toEncrypt, expandedKey,&sBox,choice);
 
             } else{
                 buffer[counter] = fgetc(file);
@@ -130,9 +141,9 @@ string charToBinary(u_char c){
     return string(result);
 }
 
-void encrypt(char* plainText, int* expandedKey){
+void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choice){
     //Declared pArray here not sure if it would be better to be passed in or not
-    cout << plainText << endl;
+    //cout << plainText << endl;
     //Split plainText into 16 bits for left and right sides
     char cRight [2];
     cRight[0]=plainText[2];
@@ -165,7 +176,7 @@ void encrypt(char* plainText, int* expandedKey){
         bitset<16> pBits(expandedKey[counter]); //Will this work with INTS
         bitset<16> placeHolder = (left ^= pBits); 
         bitset<16> value;
-        //value=fBox(placeHolder, Reference S box array); //fBox-returns 16 bits
+        value=fBox(left,sValues); //fBox-returns 16 bits
         left = (value ^= right); //left=value exclusive or right
         right = placeHolder; 
         counter++;
@@ -174,11 +185,15 @@ void encrypt(char* plainText, int* expandedKey){
     //Encryption done, combine left and right into 32 bits
     bitset<32> combine = concat(left,right);
     //open and print to file 
-    ofstream output;
-    //app is used to append to a file
-    output.open("Encrypted.txt", ios_base::app);
-    //What is supposed to be output? bits? 
-    output << hex <<combine.to_ulong() <<" "; //to_ulong() -for hex
+    if(choice!="1"){
+        ofstream output;
+        //app is used to append to a file
+        output.open(choice, ios_base::app);
+        //What is supposed to be output? bits? 
+        output << hex <<combine.to_ulong() <<" "; //to_ulong() -for hex
+    }else{
+        cout << hex << combine.to_ulong() << " "; 
+    }
     //Encryption done 
 
 
@@ -210,6 +225,44 @@ string readKey(){
     cout << endl << endl;
 
     return key;
+}
+
+bitset <16> fBox(bitset<16> input, int (*sValues)[8][4]){
+    int sum=0;
+    bitset<2> twoBits[8];
+    int rowNum=0;
+    int bitCount=1;
+    //This for loop takes in 16 bits and pushes the bits onto 8 bitset<2> starting with the leftmost bits
+    for(int i=15; i>=0; i--){
+        twoBits[rowNum][bitCount]=input[i];
+        bitCount--;
+        if(i%2==0){
+            rowNum++;
+        }
+        if(bitCount==-1){
+            bitCount=1;
+        }
+       
+   }
+   //This for loop walks through the 8 bitsets and finds the appropriate sValue and adds them to a total sum
+   int column;
+    for (int row = 0; row < 8; row++)  { 
+        column = (int)(twoBits[row].to_ulong()); //convert bits to int, which will be used to find the sValue column
+        //cout << "Value: " << hex << (*sValues)[row][column] << " Row: " <<row << " Column: " << column <<endl;
+        sum+=(*sValues)[row][column]; //Not sure if this counts as two's compliment addition??
+    }
+    bitset<16>sSum (sum);
+    //cout << "sSum: " << sSum <<endl;
+    return sSum;
+    
+
+}
+
+string readOutputChoice(){
+    cout << "If you would like to print to screen enter '1', else type output filename with a 'txt' extension at the end. " << endl;
+    string choice;
+    cin >> choice;
+    return choice;
 }
 
 
