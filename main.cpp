@@ -72,6 +72,21 @@ void readFile(string fileName, int* expandedKey){
             
         }
     }
+    // FILE* file;
+    // file = fopen(fileName.c_str(), "r");
+    // char buffer[4];
+    // string choice=readOutputChoice();
+    // if(file == NULL){
+    //     cout << "Error, unable to open file" << endl;
+    // }else{
+    //     while(!feof(file)){
+    //         fgets(buffer, sizeof(char) + 4, file);
+    //         char* toEncrypt = (char*) malloc(4 * sizeof(char));
+    //         copy(buffer, buffer + 4, toEncrypt);
+    //         encrypt(toEncrypt, expandedKey,&sBox,choice);
+    //     }
+
+    // }
 
 }
 
@@ -190,9 +205,11 @@ void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choic
         //app is used to append to a file
         output.open(choice, ios_base::app);
         //What is supposed to be output? bits? 
+        //output << plainText << " ";
         output << hex <<combine.to_ulong() <<" "; //to_ulong() -for hex
     }else{
-        cout << hex << combine.to_ulong() << " "; 
+        cout << plainText << " ";
+        //cout << hex << combine.to_ulong() << " "; 
     }
     //Encryption done 
 
