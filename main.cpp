@@ -30,12 +30,11 @@ bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
 
 int main(){
     //unsigned char pArray[]={0x49fe,0xd3c6,0x7326,0x1234,0xdefb,0x5a8b,0x1e61,0x77ad,0x94b2,0x5731};
-    remove ("Encrypted.txt");
+    //remove ("Encrypted.txt");
     string key = readKey();
     string fileName = readFileName();
     int* expandedKey = keyExpansion(key);
     readFile(fileName, expandedKey);
-    
 
     return 0;
 }
@@ -87,7 +86,8 @@ void readFile(string fileName, int* expandedKey){
     //     }
 
     // }
-
+    fclose(file);
+    free(expandedKey);
 }
 
 int* keyExpansion(string key) {
@@ -228,6 +228,7 @@ u_char* charsToHex(string data){
 string readFileName(){
     
     char* fileName;
+    fileName = (char*) malloc(25 * sizeof(char));
     cout << "Please enter file name: ";
     cin >> fileName;
     cout << endl << endl;
@@ -237,6 +238,7 @@ string readFileName(){
 string readKey(){
 
     char* key;
+    key = (char*) malloc(20 * sizeof(char));
     cout << "Please enter the key: ";
     cin >> key;
     cout << endl << endl;
