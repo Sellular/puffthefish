@@ -20,6 +20,7 @@ void readFile(string fileName, int* expandedKey);
 void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choice);
 u_char* charsToHex(string byteString);
 bitset <16> fBox(bitset<16> input, int (*sValues)[8][4]);
+string getPlainTextInput();
 
 template <size_t N1, size_t N2 >
 bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
@@ -29,14 +30,30 @@ bitset <N1 + N2> concat( const bitset <N1> & b1, const bitset <N2> & b2 ) {
 }
 
 int main(){
-    //unsigned char pArray[]={0x49fe,0xd3c6,0x7326,0x1234,0xdefb,0x5a8b,0x1e61,0x77ad,0x94b2,0x5731};
     //remove ("Encrypted.txt");
     string key = readKey();
     string fileName = readFileName();
+    if(fileName == "1"){
+        fileName = getPlainTextInput();
+    }
     int* expandedKey = keyExpansion(key);
     readFile(fileName, expandedKey);
 
     return 0;
+}
+
+string getPlainTextInput(){
+    string input = "";
+    cout << "Input the message to encrypt" << endl;
+    cout << "> ";
+    getline(cin, input);
+    getline(cin, input);
+    ofstream output;
+    //app is used to append to a file
+    string temp("temp.toenc");
+    output.open(temp, ios_base::trunc);
+    output << input;
+    return temp;
 }
 
 
@@ -71,21 +88,7 @@ void readFile(string fileName, int* expandedKey){
             
         }
     }
-    // FILE* file;
-    // file = fopen(fileName.c_str(), "r");
-    // char buffer[4];
-    // string choice=readOutputChoice();
-    // if(file == NULL){
-    //     cout << "Error, unable to open file" << endl;
-    // }else{
-    //     while(!feof(file)){
-    //         fgets(buffer, sizeof(char) + 4, file);
-    //         char* toEncrypt = (char*) malloc(4 * sizeof(char));
-    //         copy(buffer, buffer + 4, toEncrypt);
-    //         encrypt(toEncrypt, expandedKey,&sBox,choice);
-    //     }
-
-    // }
+   
     fclose(file);
     free(expandedKey);
 }
@@ -137,7 +140,6 @@ int* keyExpansion(string key) {
 
     for (int i = 0; i < 9; i++) {
         newKey[i] = newKey[i] ^ pArray[i];
-        //cout << "newKey: " << newKey[i] << endl;
     }
 
     return newKey;
@@ -157,7 +159,6 @@ string charToBinary(u_char c){
 }
 
 void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choice){
-    //Declared pArray here not sure if it would be better to be passed in or not
     //cout << plainText << endl;
     //Split plainText into 16 bits for left and right sides
     char cRight [2];
@@ -180,15 +181,11 @@ void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choic
     bitset<8> right1(rightByteString[0]);
     bitset<8> right2 (rightByteString[1]);
     bitset<16> right = concat(right1,right2);
-    //cout << "Left string: " << sLeft << endl;
-    //cout << "Right string: " << sRight << endl;
-    //cout << "Left bit string: " << left.to_string() <<endl;
-    //cout << "Right bit string: " << right.to_string() <<endl;
 
     //for loop to run through encryption steps 0,9
     for(int counter=0; counter<=9; counter++){
         //placeHolder=left exclusive or with p[counter]
-        bitset<16> pBits(expandedKey[counter]); //Will this work with INTS
+        bitset<16> pBits(expandedKey[counter]);
         bitset<16> placeHolder = (left ^= pBits); 
         bitset<16> value;
         value=fBox(left,sValues); //fBox-returns 16 bits
@@ -204,12 +201,10 @@ void encrypt(char* plainText, int* expandedKey,int (*sValues)[8][4],string choic
         ofstream output;
         //app is used to append to a file
         output.open(choice, ios_base::app);
-        //What is supposed to be output? bits? 
-        //output << plainText << " ";
         output << hex <<combine.to_ulong() <<" "; //to_ulong() -for hex
     }else{
-        cout << plainText << " ";
-        //cout << hex << combine.to_ulong() << " "; 
+       
+        cout << hex << combine.to_ulong() << " "; 
     }
     //Encryption done 
 
@@ -229,7 +224,7 @@ string readFileName(){
     
     char* fileName;
     fileName = (char*) malloc(25 * sizeof(char));
-    cout << "Please enter file name: ";
+    cout << "Please enter file name (If you would like to input a phrase type '1'): ";
     cin >> fileName;
     cout << endl << endl;
     return fileName;
@@ -267,11 +262,9 @@ bitset <16> fBox(bitset<16> input, int (*sValues)[8][4]){
    int column;
     for (int row = 0; row < 8; row++)  { 
         column = (int)(twoBits[row].to_ulong()); //convert bits to int, which will be used to find the sValue column
-        //cout << "Value: " << hex << (*sValues)[row][column] << " Row: " <<row << " Column: " << column <<endl;
-        sum+=(*sValues)[row][column]; //Not sure if this counts as two's compliment addition??
+        sum+=(*sValues)[row][column]; 
     }
     bitset<16>sSum (sum);
-    //cout << "sSum: " << sSum <<endl;
     return sSum;
     
 
